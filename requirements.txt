@@ -1,0 +1,9 @@
+# Python Load Testing Suite Dependencies
+# Core async HTTP library for load testing
+aiohttp>=3.8.0,<4.0.0
+
+# Additional useful libraries (optional but recommended)
+# For better error handling and development
+typing-extensions>=4.0.0
+
+# Note: asyncio is part of Python 3.7+ standard library

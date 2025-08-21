@@ -1,0 +1,44 @@
+{
+    "templates": [
+        {
+            "name": "simple_get",
+            "description": "Basic GET request",
+            "request": {
+                "method": "GET",
+                "url": "/api/users/123"
+            }
+        },
+        {
+            "name": "create_user",
+            "description": "POST request to create user",
+            "request": {
+                "method": "POST",
+                "url": "/api/users",
+                "body": {
+                    "name": "John Doe",
+                    "email": "john@example.com"
+                }
+            }
+        },
+        {
+            "name": "update_item",
+            "description": "PUT request to update item",
+            "request": {
+                "method": "PUT",
+                "url": "/api/items/456",
+                "body": {
+                    "title": "Updated Item",
+                    "status": "active"
+                }
+            }
+        },
+        {
+            "name": "delete_resource",
+            "description": "DELETE request",
+            "request": {
+                "method": "DELETE",
+                "url": "/api/resources/789"
+            }
+        }
+    ]
+}
