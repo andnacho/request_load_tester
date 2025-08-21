@@ -427,8 +427,8 @@ def parse_arguments():
     parser.add_argument('duration', nargs='?', type=int, default=30,
                        help='Test duration in seconds (default: 30)')
     
-    parser.add_argument('--url', default='https://api.example.com/v1/endpoint',
-                       help='Target URL (default: from config or api.example.com)')
+    parser.add_argument('--url', 
+                       help='Target URL (default: from config.json)')
     parser.add_argument('--max-errors', type=int, default=10,
                        help='Maximum errors per instance (default: 10)')
     parser.add_argument('--delay', type=float, default=0,
@@ -483,9 +483,26 @@ async def main():
         if hasattr(args, 'referer_host') and args.referer_host:
             dynamic_flags['referer_host'] = args.referer_host
     
+    # Load config and build URL if not provided
+    from .config import ConfigLoader
+    config_loader = ConfigLoader()
+    loaded_config = config_loader.get_config(dynamic_flags)
+    
+    # Build URL: use args.url if provided, otherwise build from config
+    if args.url:
+        # URL was explicitly provided, use it
+        url = args.url
+    else:
+        # Build URL from config
+        url = f"{loaded_config.get('target', {}).get('host', '')}{loaded_config.get('target', {}).get('endpoint', '')}"
+        if not url:
+            # Fallback to default if config is incomplete
+            url = 'https://api.example.com/v1/endpoint'
+            print(f"⚠️  Warning: No URL in config.json, using default: {url}")
+    
     # Build configuration
     config = {
-        'url': args.url,
+        'url': url,
         'instances': args.instances,
         'concurrent_per_instance': args.concurrent_per_instance,
         'duration': args.duration,

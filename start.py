@@ -103,9 +103,23 @@ class LoadTestingSuite:
         # Build dynamic flags based on config placeholders
         dynamic_flags = self._build_dynamic_flags(args, config_loader)
         
+        # Get config with dynamic flags
+        loaded_config = config_loader.get_config(dynamic_flags)
+        
+        # Build URL: use args.url if provided, otherwise build from config
+        if hasattr(args, 'url') and args.url and args.url != DEFAULT_API_URL:
+            # URL was explicitly provided, use it
+            url = args.url
+        else:
+            # Build URL from config
+            url = f"{loaded_config.get('target', {}).get('host', '')}{loaded_config.get('target', {}).get('endpoint', '')}"
+            if not url:
+                # Fallback to default if config is incomplete
+                url = DEFAULT_API_URL
+        
         # Build configuration
         config = {
-            'url': args.url,
+            'url': url,
             'instances': args.instances,
             'concurrent_per_instance': args.concurrent,
             'duration': args.duration,
@@ -113,7 +127,8 @@ class LoadTestingSuite:
             'delay': args.delay,
             'verbose': args.verbose,
             'debug': args.debug,
-            'dynamic_flags': dynamic_flags
+            'dynamic_flags': dynamic_flags,
+            'loaded_config': loaded_config
         }
         
         # Run the test
@@ -281,8 +296,7 @@ def create_parser():
                              help='Concurrent per instance (default: 5)')
     multi_parser.add_argument('duration', nargs='?', type=int, default=30,
                              help='Duration in seconds (default: 30)')
-    multi_parser.add_argument('--url', default=DEFAULT_API_URL,
-                             help='Target URL')
+    multi_parser.add_argument('--url', help='Target URL (overrides config.json)')
     
     # Extraction parser
     extract_parser = subparsers.add_parser('extract', help='Extract data from results')
