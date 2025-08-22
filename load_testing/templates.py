@@ -1,10 +1,11 @@
 """
-Request template management.
+Request template management with random function support.
 """
 
 import json
 from pathlib import Path
 from typing import List, Dict, Any
+from .random_functions import process_random_functions
 
 
 class RequestTemplate:
@@ -13,7 +14,12 @@ class RequestTemplate:
     def __init__(self, name: str, description: str, body: Dict[str, Any]):
         self.name = name
         self.description = description
-        self.body = body
+        self.original_body = body  # Keep original for reference
+        self.body = body  # This will be processed with random functions when needed
+    
+    def get_processed_body(self) -> Dict[str, Any]:
+        """Get body with random functions processed (generates new values each time)."""
+        return process_random_functions(self.original_body)
 
 
 class TemplateLoader:

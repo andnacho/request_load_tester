@@ -45,6 +45,9 @@ python start.py single 10 30
 # With authentication and verbose output (uses config.json URL)
 python start.py single 5 60 --api-key "your-token" --verbose
 
+# Debug request and response data
+python start.py single 3 30 --request --verbose
+
 # Custom URL override
 python start.py single 5 30 --url https://api.example.com/test --max-errors 5 --delay 0.5
 ```
@@ -199,6 +202,117 @@ python start.py single --api-key "token" --origin-host "https://staging.com"
 python start.py multi 3 5 30 --api-key "token" --target-host "https://api.test.com"
 ```
 
+## 🎲 **Random Functions**
+
+The load testing suite supports dynamic random value generation in both `config.json` and `request-templates.json` files. All functions support an optional **memory feature** to remember and reuse values by name.
+
+### **Available Functions**
+
+**All functions support an optional `name` parameter for memory:**
+- Functions with `name` will remember their value and return the same value when called again with the same name
+- Functions without `name` generate new values each time
+- Memory persists across the entire request processing session
+
+#### `randomString(length, name="optional")`
+Generates a random alphanumeric string of specified length.
+
+```json
+{
+  "user_id": "user_randomString(8, name='userid')",
+  "session": "session_randomString(16)",
+  "repeat_user": "randomString(8, name='userid')"
+}
+```
+**Output:** user_id and repeat_user will have the same value, session will be different.
+
+#### `randomInt(min, max, name="optional")`
+Generates a random integer between min and max (inclusive).
+
+```json
+{
+  "age": "randomInt(18,65, name=\"user_age\")",
+  "quantity": "randomInt(1,100)",
+  "repeat_age": "randomInt(18,65, name=\"user_age\")"
+}
+```
+
+#### `randomFloat(min, max, decimals, name="optional")`
+Generates a random float between min and max with specified decimal places.
+
+```json
+{
+  "price": "randomFloat(10.0,100.0,2, name='item_price')",
+  "rate": "randomFloat(0.1,5.0,3)",
+  "balance": "randomFloat(100,1000,2,**00, name='account')"
+}
+```
+
+#### `randomUuid(name="optional")`
+Generates a random UUID v4.
+
+```json
+{
+  "id": "randomUuid(name=\"user_uuid\")",
+  "transaction_id": "txn_randomUuid()",
+  "repeat_id": "randomUuid(name=\"user_uuid\")"
+}
+```
+
+#### `randomDatetime(start="optional", end="optional", format="optional", name="optional")`
+Generates a random datetime between start and end with specified format.
+
+```json
+{
+  "created_at": "randomDatetime()",
+  "start_date": "randomDatetime(format='YYYY-MM-DD')",
+  "event_time": "randomDatetime(start='2025-08-21 18:20:20', end='2025-08-25 18:20:20')",
+  "same_time": "randomDatetime(name='shared_timestamp')"
+}
+```
+
+### **Usage Examples**
+
+#### Config.json with Random Functions
+```json
+{
+  "headers": {
+    "user-agent": "LoadTester-randomString(8)",
+    "x-request-id": "randomUuid()",
+    "x-test-run": "run_randomInt(1000,9999, name='test_run')"
+  }
+}
+```
+
+#### Request Templates with Memory
+```json
+{
+  "templates": [
+    {
+      "name": "create_user",
+      "description": "Create user with consistent data",
+      "request": {
+        "id": "randomUuid(name=\"main_user\")",
+        "username": "user_randomString(10, name=\"username\")",
+        "email": "randomString(8, name=\"username\")@test.com",
+        "age": "randomInt(18,65, name=\"user_age\")",
+        "created_at": "randomDatetime(name=\"timestamp\")",
+        "profile": {
+          "user_id": "randomUuid(name=\"main_user\")",
+          "age": "randomInt(18,65, name=\"user_age\")",
+          "registered": "randomDatetime(name=\"timestamp\")"
+        }
+      }
+    }
+  ]
+}
+```
+
+### **Memory Feature Benefits**
+
+- **Data Consistency**: Maintain relationships between fields (user ID across multiple objects)
+- **Realistic Testing**: Generate coherent test data that mimics real-world scenarios
+- **Flexible Control**: Mix remembered values with always-random values as needed
+
 ## 🛠 **Command Reference**
 
 ### **Global Options**
@@ -208,6 +322,7 @@ python start.py multi 3 5 30 --api-key "token" --target-host "https://api.test.c
 | `--max-errors N` | Stop after N errors | `--max-errors 10` |
 | `--delay N` | Delay between requests (seconds) | `--delay 0.5` |
 | `--verbose, -v` | Enable verbose response logging | `--verbose` |
+| `--request` | Print request body being sent | `--request` |
 | `--debug` | Show configuration details | `--debug` |
 
 ### **Single Instance Mode**
@@ -361,6 +476,72 @@ Shows:
 - Target configuration
 - Test parameters
 - Environment variables
+
+### **Request & Response Debugging**
+
+#### **View Request Bodies (`--request`)**
+See exactly what JSON payload is being sent to your API:
+```bash
+python start.py single 1 10 --request
+```
+
+Output:
+```
+--- Request Details ---
+Template: draft_invoice - Draft invoice without payment
+Method: POST
+URL: https://api.example.com/v1/invoices
+Headers: {
+  "authorization": "Bearer your-token",
+  "content-type": "application/json",
+  ...
+}
+Body: {
+  "date": "2025-08-20",
+  "client": "randomString(8)",
+  "amount": "randomFloat(100,1000,2)"
+}
+--- End Request ---
+```
+
+#### **View Response Bodies (`--verbose`)**
+See the complete server response:
+```bash
+python start.py single 1 10 --verbose
+```
+
+Output:
+```
+--- Response Details ---
+Template Used: draft_invoice - Draft invoice without payment
+Status: 200
+Response Time: 245ms
+Headers: {
+  "content-type": "application/json",
+  ...
+}
+Body: {
+  "id": "inv_12345",
+  "status": "created",
+  "message": "Invoice created successfully"
+}
+--- End Response ---
+```
+
+#### **Debug Both Request & Response**
+For complete API interaction visibility:
+```bash
+python start.py single 5 30 --request --verbose
+```
+
+#### **Multi-Instance Debugging**
+Request details are saved to individual log files:
+```bash
+python start.py multi 3 5 30 --request --verbose
+
+# View individual instance logs
+cat load_test_results_*/instance_1.log
+```
 
 ## 📚 **Examples by Use Case**
 

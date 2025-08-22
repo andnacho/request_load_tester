@@ -28,7 +28,7 @@ class LoadTester:
         return self.template_loader.get_random_template()
     
     async def make_request(self, url: str, template: RequestTemplate, verbose: bool = False, 
-                          config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+                          show_request: bool = False, config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Make a single HTTP request."""
         start_time = time.time()
         
@@ -43,11 +43,24 @@ class LoadTester:
             # Get method from config
             method = request_config.get('target', {}).get('method', 'POST').upper()
             
+            # Get processed body with random functions
+            processed_body = template.get_processed_body()
+            
+            # Print request details if requested
+            if show_request:
+                print(f"\n--- Request Details ---", flush=True)
+                print(f"Template: {template.name} - {template.description}", flush=True)
+                print(f"Method: {method}", flush=True)
+                print(f"URL: {url}", flush=True)
+                print(f"Headers: {json.dumps(headers, indent=2)}", flush=True)
+                print(f"Body: {json.dumps(processed_body, indent=2)}", flush=True)
+                print(f"--- End Request ---\n", flush=True)
+            
             # Make the request
             async with self.session.request(
                 method=method,
                 url=url,
-                json=template.body,
+                json=processed_body,
                 headers=headers,
                 timeout=aiohttp.ClientTimeout(total=30)
             ) as response:
@@ -155,6 +168,7 @@ class LoadTester:
                 config['url'], 
                 template, 
                 config['verbose'], 
+                config.get('request', False),
                 config['loaded_config']
             )
             self.update_results(result)
@@ -185,6 +199,7 @@ class LoadTester:
                     config['url'], 
                     template, 
                     config['verbose'], 
+                    config.get('request', False),
                     config['loaded_config']
                 )
                 self.update_results(result)

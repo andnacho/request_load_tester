@@ -1,5 +1,5 @@
 """
-Configuration loader with environment variable substitution.
+Configuration loader with environment variable substitution and random functions.
 """
 
 import json
@@ -8,6 +8,7 @@ import re
 import sys
 from pathlib import Path
 from typing import Dict, List, Any
+from .random_functions import process_random_functions
 
 
 class ConfigLoader:
@@ -33,15 +34,17 @@ class ConfigLoader:
             sys.exit(1)
     
     def substitute_environment_variables(self, obj: Any, flags: Dict[str, str] = None) -> Any:
-        """Recursively substitute environment variables in configuration."""
+        """Recursively substitute environment variables and random functions in configuration."""
         if flags is None:
             flags = {}
         
         if isinstance(obj, str):
-            # Check for [[VARIABLE]] pattern (supports letters, numbers, and underscores)
-            matches = re.findall(r'\[\[([A-Z_0-9]+)\]\]', obj)
+            # First process random functions
+            result = process_random_functions(obj)
+            
+            # Then check for [[VARIABLE]] pattern (supports letters, numbers, and underscores)
+            matches = re.findall(r'\[\[([A-Z_0-9]+)\]\]', result)
             if matches:
-                result = obj
                 for var_name in matches:
                     replacement = None
                     
@@ -57,7 +60,7 @@ class ConfigLoader:
                         print(f"⚠️  Environment variable {var_name} not found, keeping placeholder")
                 
                 return result
-            return obj
+            return result
         
         elif isinstance(obj, list):
             return [self.substitute_environment_variables(item, flags) for item in obj]

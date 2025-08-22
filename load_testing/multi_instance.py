@@ -70,6 +70,9 @@ class LoadTestInstance:
         if self.config.get('debug'):
             cmd.append('--debug')
         
+        if self.config.get('request'):
+            cmd.append('--request')
+        
         # Add dynamic config flags
         for key, value in self.config.get('dynamic_flags', {}).items():
             flag_name = key.replace('_', '-')
@@ -82,14 +85,25 @@ class LoadTestInstance:
         self.log_file = results_dir / f'instance_{self.instance_id}.log'
         cmd = self.get_command()
         
+        # Debug: print the command being executed
+        if self.config.get('debug'):
+            print(f"DEBUG: Instance {self.instance_id} command:")
+            for i, arg in enumerate(cmd):
+                print(f"  [{i}]: {arg}")
+            print(f"DEBUG: Request flag in config: {self.config.get('request')}")
+        
         try:
-            # Run the subprocess
+            # Run the subprocess with unbuffered output
+            env = os.environ.copy()
+            env['PYTHONUNBUFFERED'] = '1'
+            
             with open(self.log_file, 'w', encoding='utf-8') as f:
                 self.process = await asyncio.create_subprocess_exec(
                     *cmd,
                     stdout=f,
                     stderr=subprocess.STDOUT,
-                    cwd=Path(__file__).parent.parent
+                    cwd=Path(__file__).parent.parent,
+                    env=env
                 )
                 
                 self.return_code = await self.process.wait()
@@ -185,6 +199,7 @@ class MultiInstanceLoadTester:
             'delay': config.get('delay', 0),
             'verbose': config.get('verbose', False),
             'debug': config.get('debug', False),
+            'request': config.get('request', False),
             'dynamic_flags': config.get('dynamic_flags', {})
         }
         

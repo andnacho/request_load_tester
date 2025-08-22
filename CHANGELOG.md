@@ -5,6 +5,65 @@ All notable changes to the Python Load Testing Suite will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-08-21
+
+### ✨ Added
+
+#### Request Body Debugging
+- **`--request` Flag** - New command-line flag to print request body being sent to the API
+- **Request Details Output** - Shows template name, HTTP method, URL, headers, and JSON body
+- **Multi-Instance Support** - Request details are captured in individual instance log files
+- **Combined Debugging** - Use `--request` with `--verbose` to see both request and response data
+
+#### Enhanced Debugging Experience
+- **Clear Separation** - Distinct output for request data (what you send) vs response data (what you receive)
+- **Template Visibility** - See which request template is being used for each request
+- **Header Inspection** - View processed headers with environment variable substitutions
+- **JSON Formatting** - Pretty-printed JSON for easy reading and debugging
+
+### 🔧 Fixed
+- **Multi-Instance Configuration** - Request flag now properly passed to subprocess instances
+- **Output Buffering** - Added `PYTHONUNBUFFERED=1` and `flush=True` for reliable log capture
+- **Subprocess Communication** - Improved handling of subprocess output in multi-instance mode
+
+### 📖 Enhanced
+- **Documentation** - Added comprehensive request/response debugging examples to README
+- **Command Reference** - Updated global options table with `--request` flag
+- **Usage Examples** - Added debugging examples in Quick Start section
+
+## [1.1.0] - 2025-08-21
+
+### ✨ Added
+
+#### Random Functions System
+- **Dynamic Value Generation** - Complete random function system for realistic load testing
+- **Memory Feature** - Named value storage to maintain consistency across related fields
+- **Quote Flexibility** - Support for both single and double quotes in function parameters
+
+#### New Random Functions
+- **`randomString(length, name="optional")`** - Generate random alphanumeric strings
+- **`randomInt(min, max, name="optional")`** - Generate random integers within range
+- **`randomFloat(min, max, decimals, name="optional")`** - Generate random floats with precision
+- **`randomFloat(min, max, decimals, **suffix, name="optional")`** - Generate floats with fixed suffix digits
+- **`randomUuid(name="optional")`** - Generate random UUID v4 identifiers
+- **`randomDatetime(start="optional", end="optional", format="optional", name="optional")`** - Generate random datetime values
+
+#### Integration
+- **Config.json Support** - Use random functions in configuration headers and values
+- **Template Support** - Use random functions in request-templates.json for dynamic payloads
+- **Memory Persistence** - Named values remain consistent within single request processing
+- **Mixed Usage** - Combine named (remembered) and unnamed (always random) functions
+
+### 🔧 Fixed
+- **URL Configuration** - Multi-instance mode now properly reads from config.json by default
+- **Config Loading** - Both single and multi-instance modes use consistent configuration loading
+- **Quote Handling** - Improved regex patterns for reliable parameter parsing
+
+### 📚 Enhanced
+- **Documentation** - Comprehensive random functions documentation in README.md
+- **Examples** - Real-world usage examples for all random function types
+- **Testing** - Extensive test coverage for memory features and edge cases
+
 ## [1.0.0] - 2025-01-21
 
 ### 🎉 Initial Release

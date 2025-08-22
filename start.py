@@ -76,6 +76,7 @@ class LoadTestingSuite:
             'delay': args.delay,
             'verbose': args.verbose,
             'debug': args.debug,
+            'request': args.request,
             'loaded_config': loaded_config
         }
         
@@ -127,6 +128,7 @@ class LoadTestingSuite:
             'delay': args.delay,
             'verbose': args.verbose,
             'debug': args.debug,
+            'request': args.request,
             'dynamic_flags': dynamic_flags,
             'loaded_config': loaded_config
         }
@@ -253,6 +255,7 @@ COMMON OPTIONS:
   --delay N           Delay between requests in seconds (default: 0)
   --verbose, -v       Enable verbose output with response details
   --debug             Enable debug output
+  --request           Print request body being sent
 
 DYNAMIC CONFIG FLAGS (auto-detected from config.json):
 {dynamic_flags_text}
@@ -321,6 +324,8 @@ def create_parser():
                               help='Enable verbose output')
         subparser.add_argument('--debug', action='store_true',
                               help='Enable debug output')
+        subparser.add_argument('--request', action='store_true',
+                              help='Print request body being sent')
         
         # Dynamically add arguments for all config placeholders
         for placeholder_var in placeholder_vars:
