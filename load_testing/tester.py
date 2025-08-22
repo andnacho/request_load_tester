@@ -17,9 +17,9 @@ from .results import LoadTestResults
 class LoadTester:
     """Main load testing class with async HTTP requests."""
     
-    def __init__(self, config_loader: ConfigLoader = None):
+    def __init__(self, config_loader: ConfigLoader = None, template_filter: str = None):
         self.config_loader = config_loader or ConfigLoader()
-        self.template_loader = TemplateLoader()
+        self.template_loader = TemplateLoader(template_filter=template_filter)
         self.results = LoadTestResults()
         self.session: Optional[aiohttp.ClientSession] = None
     

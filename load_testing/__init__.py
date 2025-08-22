@@ -14,7 +14,7 @@ from .results import LoadTestResults
 from .tester import LoadTester
 from .data_extractor import LoadTestDataExtractor
 from .multi_instance import MultiInstanceLoadTester
-from .random_functions import RandomFunctionProcessor, process_random_functions
+from .random_utils import RandomFunctionProcessor, process_random_functions
 
 __version__ = "1.0.0"
 __author__ = "Load Testing Suite Team"

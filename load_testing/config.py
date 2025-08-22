@@ -8,7 +8,7 @@ import re
 import sys
 from pathlib import Path
 from typing import Dict, List, Any
-from .random_functions import process_random_functions
+from .random_utils import process_random_functions
 
 
 class ConfigLoader:

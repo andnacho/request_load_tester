@@ -5,6 +5,67 @@ All notable changes to the Python Load Testing Suite will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2025-08-21
+
+### ✨ Added
+
+#### Template Generation Command
+- **`template` Command** - New command to generate and display request templates without making HTTP requests
+- **Template Filtering** - Use same filtering syntax as load testing (`--template "normal_invoice,^draft_invoice"`)
+- **Clean Output** - Well-formatted JSON display for easy reading
+- **Multiple Generations** - Generate same template multiple times with `--count N` parameter
+- **Debug Templates** - Perfect for testing random functions and template logic before load testing
+
+#### Developer Experience
+- **No HTTP Overhead** - Test templates instantly without API calls
+- **Random Function Validation** - See exactly how random values are generated
+- **Template Debugging** - Verify template structure and data before running load tests
+- **Integration Ready** - Clean output perfect for development and debugging
+
+### 💡 Examples
+```bash
+# Generate all templates once
+python start.py template
+
+# Generate specific template multiple times 
+python start.py template --template normal_invoice --count 3
+
+# Generate multiple templates
+python start.py template --template "draft_invoice,normal_invoice"
+```
+
+## [1.3.0] - 2025-08-21
+
+### ✨ Added
+
+#### Smart JSON Data Types
+- **Numeric Output by Default** - `randomInt()` and `randomFloat()` now return actual numbers for proper JSON compatibility
+- **Optional String Output** - New `isString=true` parameter to force string output when needed
+- **Automatic Type Detection** - Custom separators automatically force string output
+- **JSON-Aware Processing** - Intelligent handling of JSON strings vs. regular strings
+
+#### Enhanced Random Functions
+- **`randomInt(min, max, isString=false, name="optional")`** - Returns `int` by default, `str` with `isString=true`
+- **`randomFloat()` Separator Support** - Comma separator (`,`) for European number formatting
+- **Combined Parameters** - Support for pattern + separator + isString combinations
+- **Smart Processing** - Single function calls return raw types, mixed strings convert to strings
+
+#### Developer Experience
+- **Better JSON Compatibility** - No more manual parsing of numeric strings in API responses
+- **Flexible Output Control** - Choose numeric or string output based on your needs
+- **European Number Support** - Built-in comma separator for international applications
+
+### 💡 Examples
+```json
+{
+  "user_id": "randomInt(1000,9999)",              // → 5432 (number)
+  "user_id_str": "randomInt(1000,9999, isString=true)",   // → "5432" (string)
+  "price": "randomFloat(100,500,2)",              // → 234.56 (number)
+  "european_price": "randomFloat(100,500,2,,)",   // → "234,56" (string)
+  "pattern_price": "randomFloat(100,200,4,**00)"  // → 156.1000 (number)
+}
+```
+
 ## [1.2.0] - 2025-08-21
 
 ### ✨ Added

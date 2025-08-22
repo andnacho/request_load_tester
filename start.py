@@ -9,11 +9,13 @@ Commands:
   single    Run single instance load test
   multi     Run multi-instance load test  
   extract   Extract and analyze test results
+  template  Generate and display request templates
 
 Examples:
   python start.py single 10 30 --verbose
   python start.py multi 3 5 60 --api-key YOUR_KEY
   python start.py extract results_dir id message --sort id
+  python start.py template --template normal_invoice --count 3
 """
 
 import sys
@@ -85,7 +87,7 @@ class LoadTestingSuite:
             self._print_debug_info(config, loaded_config)
         
         # Run the test
-        tester = LoadTester(config_loader)
+        tester = LoadTester(config_loader, template_filter=args.template)
         results = await tester.run_test(config)
         
         return {
@@ -129,6 +131,7 @@ class LoadTestingSuite:
             'verbose': args.verbose,
             'debug': args.debug,
             'request': args.request,
+            'template_filter': args.template,
             'dynamic_flags': dynamic_flags,
             'loaded_config': loaded_config
         }
@@ -212,6 +215,7 @@ MODES:
   single    Run a single load testing instance
   multi     Run multiple load testing instances in parallel
   extract   Extract data from previous test results
+  template  Generate and display request templates
 
 EXAMPLES:
 
@@ -224,6 +228,12 @@ python start.py single 10 30 --url https://api.example.com/test --verbose
 # Multi-instance test (3 instances, 5 concurrent each)
 python start.py multi 3 5 30 --api-key YOUR_KEY --verbose
 
+# Single instance test using only specific templates
+python start.py single 10 30 --template "draft_invoice,normal_invoice" --verbose
+
+# Multi-instance test excluding one template
+python start.py multi 2 5 30 --template "^invoice_with_payment" --verbose
+
 # Extract specific data from results
 python start.py extract path/to/results message code --sort
 
@@ -232,6 +242,15 @@ python start.py extract path/to/results id message --sort id --template
 
 # Extract all data
 python start.py extract path/to/results --all
+
+# Generate all templates once
+python start.py template
+
+# Generate specific template multiple times
+python start.py template --template normal_invoice --count 3
+
+# Generate multiple templates  
+python start.py template --template "draft_invoice,normal_invoice"
 
 SINGLE INSTANCE OPTIONS:
   concurrent           Number of concurrent requests (default: 5)
@@ -250,12 +269,20 @@ EXTRACTION OPTIONS:
   --template          Include template information in the output
   --all               Extract all data (comprehensive analysis)
 
+TEMPLATE OPTIONS:
+  --template FILTER   Template filter to include/exclude templates
+  --count N           Number of template instances to generate (default: 1)
+
 COMMON OPTIONS:
   --max-errors N      Maximum errors before stopping (default: 10)
   --delay N           Delay between requests in seconds (default: 0)
   --verbose, -v       Enable verbose output with response details
   --debug             Enable debug output
   --request           Print request body being sent
+  --template FILTER   Template filter to include/exclude templates:
+                      "temp1,temp2" (include only temp1 and temp2)
+                      "^temp1" (exclude temp1, use all others)
+                      "temp1,^temp2" (include temp1, exclude temp2)
 
 DYNAMIC CONFIG FLAGS (auto-detected from config.json):
 {dynamic_flags_text}
@@ -263,6 +290,47 @@ DYNAMIC CONFIG FLAGS (auto-detected from config.json):
 For more detailed help on a specific mode:
   python start.py <mode> --help
         """)
+    
+    async def run_template_generation(self, args):
+        """Generate and display request templates without making HTTP requests."""
+        print("🎨 Generating request templates...")
+        
+        try:
+            # Initialize config loader
+            config_loader = ConfigLoader()
+            loaded_config = config_loader.get_config({})
+            
+            # Load templates
+            from load_testing.templates import TemplateLoader
+            template_filter = getattr(args, 'template', None)
+            template_loader = TemplateLoader(template_filter=template_filter)
+            templates = template_loader.templates
+            
+            if not templates:
+                print("❌ No templates found or no templates match the specified filter")
+                return
+            
+            print(f"📋 Found {len(templates)} template(s)")
+            
+            # Generate templates
+            for i in range(args.count):
+                print(f"\n{'='*50} Generation {i+1} {'='*50}")
+                
+                for j, template in enumerate(templates, 1):
+                    print(f"\n--- Template {j}: {template.name} ---")
+                    print(f"Description: {template.description}")
+                    
+                    # Get processed body with random functions
+                    processed_body = template.get_processed_body()
+                    
+                    # Pretty formatted output
+                    import json
+                    print("Generated Body:")
+                    print(json.dumps(processed_body, indent=2, ensure_ascii=False))
+                
+        except Exception as e:
+            print(f"❌ Error generating templates: {e}")
+            return
 
 
 def create_parser():
@@ -314,6 +382,13 @@ def create_parser():
                                help='Extract all data (full analysis)')
     extract_parser.add_argument('--output', '-o', help='Output file name')
     
+    # Template generator parser
+    template_parser = subparsers.add_parser('template', help='Generate and display request templates')
+    template_parser.add_argument('--template', type=str,
+                                help='Template filter: "temp1,temp2" (include only) or "^temp1" (exclude)')
+    template_parser.add_argument('--count', type=int, default=1,
+                                help='Number of template instances to generate (default: 1)')
+    
     # Common options for single and multi
     for subparser in [single_parser, multi_parser]:
         subparser.add_argument('--max-errors', type=int, default=10,
@@ -326,6 +401,8 @@ def create_parser():
                               help='Enable debug output')
         subparser.add_argument('--request', action='store_true',
                               help='Print request body being sent')
+        subparser.add_argument('--template', type=str,
+                              help='Template filter: "temp1,temp2" (include only) or "^temp1" (exclude)')
         
         # Dynamically add arguments for all config placeholders
         for placeholder_var in placeholder_vars:
@@ -403,6 +480,9 @@ async def main():
                     print(f"📁 Extracted data saved to: {output_path}")
                 else:
                     print(json.dumps(result, indent=2, ensure_ascii=False))
+        
+        elif args.mode == 'template':
+            await suite.run_template_generation(args)
         
         else:
             print(f"❌ Unknown mode: {args.mode}")

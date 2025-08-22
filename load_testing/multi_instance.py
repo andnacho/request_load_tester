@@ -73,6 +73,10 @@ class LoadTestInstance:
         if self.config.get('request'):
             cmd.append('--request')
         
+        # Add template filter if specified
+        if self.config.get('template_filter'):
+            cmd.extend(['--template', self.config['template_filter']])
+        
         # Add dynamic config flags
         for key, value in self.config.get('dynamic_flags', {}).items():
             flag_name = key.replace('_', '-')
@@ -200,6 +204,7 @@ class MultiInstanceLoadTester:
             'verbose': config.get('verbose', False),
             'debug': config.get('debug', False),
             'request': config.get('request', False),
+            'template_filter': config.get('template_filter'),
             'dynamic_flags': config.get('dynamic_flags', {})
         }
         

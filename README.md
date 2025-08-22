@@ -11,6 +11,7 @@ A comprehensive, professional-grade load testing solution built entirely in Pyth
 - ✅ **Unified Interface** - Single command for all operations
 - ✅ **Professional Error Handling** - Comprehensive debugging and recovery
 - ✅ **Rich Configuration** - Dynamic environment variable substitution
+- ✅ **Template Filtering** - Include/exclude specific request templates  
 - ✅ **Multiple Testing Modes** - Single instance, multi-instance, and extraction
 
 ## 📦 **Quick Setup**
@@ -65,6 +66,52 @@ python start.py multi 10 20 120 --api-key "your-token" --max-errors 50
 # Gentle testing with delays
 python start.py multi 2 1 60 --delay 2 --verbose
 ```
+
+### **Template Filtering**
+Control which request templates are used during testing.
+
+```bash
+# Use only specific templates
+python start.py single 10 30 --template "draft_invoice,normal_invoice" --verbose
+
+# Exclude specific templates (use ^ symbol)
+python start.py single 10 30 --template "^invoice_with_payment" --verbose
+
+# Mix include and exclude
+python start.py multi 2 5 30 --template "draft_invoice,^normal_invoice" --verbose
+
+# Multi-instance with template filtering
+python start.py multi 3 5 60 --template "^draft_invoice,^normal_invoice" --verbose
+```
+
+**Template Filter Syntax:**
+- **Include only**: `"template1,template2"` - Use only specified templates
+- **Exclude**: `"^template1"` - Use all templates except specified ones
+- **Mix**: `"template1,^template2"` - Include template1, exclude template2
+
+### **Template Generation & Testing**
+Generate and preview request templates without making HTTP requests. Perfect for testing template logic and random functions.
+
+```bash
+# Generate all templates once
+python start.py template
+
+# Generate specific template multiple times
+python start.py template --template normal_invoice --count 3
+
+# Generate multiple templates
+python start.py template --template "draft_invoice,normal_invoice"
+
+# Exclude templates and generate multiple times
+python start.py template --template "^invoice_with_payment" --count 2
+```
+
+**Template Generation Features:**
+- **🎯 No HTTP Requests** - Test templates without hitting your API
+- **🎲 Random Function Testing** - See how random values are generated
+- **📊 Clean Output** - Well-formatted JSON for easy reading
+- **🔢 Multiple Generations** - Generate the same template multiple times to test randomness
+- **🎛️ Template Filtering** - Use same syntax as load testing modes
 
 ### **Data Extraction & Analysis**
 Extract business intelligence and performance metrics from test results.
@@ -206,6 +253,24 @@ python start.py multi 3 5 30 --api-key "token" --target-host "https://api.test.c
 
 The load testing suite supports dynamic random value generation in both `config.json` and `request-templates.json` files. All functions support an optional **memory feature** to remember and reuse values by name.
 
+### **🔢 JSON Compatibility & Data Types**
+
+**Smart Type Handling:**
+- **`randomInt()` and `randomFloat()`** return **numeric values by default** for proper JSON compatibility
+- **`randomString()` and `randomUuid()`** always return strings
+- Use **`isString=true`** to force string output when needed
+- **Custom separators** (comma, dot) automatically force string output
+
+**Example:**
+```json
+{
+  "user_id": "randomInt(1000,9999)",          // → 5432 (number)
+  "user_id_str": "randomInt(1000,9999, isString=true)",  // → "5432" (string)
+  "price": "randomFloat(100,500,2)",          // → 234.56 (number)
+  "european_price": "randomFloat(100,500,2,,)" // → "234,56" (string)
+}
+```
+
 ### **Available Functions**
 
 **All functions support an optional `name` parameter for memory:**
@@ -225,25 +290,61 @@ Generates a random alphanumeric string of specified length.
 ```
 **Output:** user_id and repeat_user will have the same value, session will be different.
 
-#### `randomInt(min, max, name="optional")`
-Generates a random integer between min and max (inclusive).
+#### `randomInt(min, max, isString=false, name="optional")`
+Generates a random integer between min and max (inclusive). **Returns numeric value by default** for proper JSON compatibility.
+
+**Parameters:**
+- `min, max`: Range for random integer
+- `isString=true`: Force string output (optional)
+- `name`: Memory key for value reuse (optional)
 
 ```json
 {
   "age": "randomInt(18,65, name=\"user_age\")",
   "quantity": "randomInt(1,100)",
+  "user_id_str": "randomInt(1000,9999, isString=true)",
   "repeat_age": "randomInt(18,65, name=\"user_age\")"
 }
 ```
 
-#### `randomFloat(min, max, decimals, name="optional")`
-Generates a random float between min and max with specified decimal places.
+**Example Output:**
+```json
+{
+  "age": 25,
+  "quantity": 47, 
+  "user_id_str": "5432",
+  "repeat_age": 25
+}
+```
+
+#### `randomFloat(min, max, decimals, pattern="optional", separator=".", isString=false, name="optional")`
+Generates a random float between min and max with specified decimal places. **Returns numeric value by default** for proper JSON compatibility.
+
+**Parameters:**
+- `min, max, decimals`: Range and precision for random float
+- `**pattern`: Fixed ending digits (e.g., `**00` for .00 endings)
+- `separator`: Decimal separator (`,` for European format, forces string output)
+- `isString=true`: Force string output (optional)
+- `name`: Memory key for value reuse (optional)
 
 ```json
 {
-  "price": "randomFloat(10.0,100.0,2, name='item_price')",
+  "price": "randomFloat(10,100,2, name='item_price')",
   "rate": "randomFloat(0.1,5.0,3)",
-  "balance": "randomFloat(100,1000,2,**00, name='account')"
+  "balance": "randomFloat(100,1000,2,**00, name='account')",
+  "european_price": "randomFloat(10,50,2,,)",
+  "price_str": "randomFloat(100,200,2, isString=true)"
+}
+```
+
+**Example Output:**
+```json
+{
+  "price": 45.67,
+  "rate": 2.341,
+  "balance": 543.00,
+  "european_price": "32,15",
+  "price_str": "156.78"
 }
 ```
 
@@ -324,6 +425,7 @@ Generates a random datetime between start and end with specified format.
 | `--verbose, -v` | Enable verbose response logging | `--verbose` |
 | `--request` | Print request body being sent | `--request` |
 | `--debug` | Show configuration details | `--debug` |
+| `--template FILTER` | Filter templates to include/exclude | `--template "draft_invoice,^normal_invoice"` |
 
 ### **Single Instance Mode**
 ```bash
@@ -353,6 +455,27 @@ python start.py extract [results_dir] [attributes] [options]
 - `--sort ATTRIBUTE` - Sort by specific attribute value (merged format)
 - `--template` - Include template name used for each request
 - `--output FILE` - Save results to JSON file
+
+### **Template Mode**
+```bash
+python start.py template [options]
+```
+
+**Template Options:**
+- `--template FILTER` - Filter templates to include/exclude
+- `--count N` - Number of template instances to generate (default: 1)
+
+**Examples:**
+```bash
+# Generate all templates once
+python start.py template
+
+# Generate specific template 3 times  
+python start.py template --template normal_invoice --count 3
+
+# Generate multiple templates
+python start.py template --template "draft_invoice,normal_invoice"
+```
 
 ## 📈 **Performance & Results**
 
