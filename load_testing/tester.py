@@ -46,16 +46,6 @@ class LoadTester:
             # Get processed body with random functions
             processed_body = template.get_processed_body()
             
-            # Print request details if requested
-            if show_request:
-                print(f"\n--- Request Details ---", flush=True)
-                print(f"Template: {template.name} - {template.description}", flush=True)
-                print(f"Method: {method}", flush=True)
-                print(f"URL: {url}", flush=True)
-                print(f"Headers: {json.dumps(headers, indent=2)}", flush=True)
-                print(f"Body: {json.dumps(processed_body, indent=2)}", flush=True)
-                print(f"--- End Request ---\n", flush=True)
-            
             # Make the request
             async with self.session.request(
                 method=method,
@@ -67,15 +57,25 @@ class LoadTester:
                 response_time = (time.time() - start_time) * 1000  # Convert to milliseconds
                 response_body = await response.text()
                 
+                # Print request details if requested (after response to keep them together)
+                if show_request:
+                    print(f"\n--- Request Details ---", flush=True)
+                    print(f"Template: {template.name} - {template.description}", flush=True)
+                    print(f"Method: {method}", flush=True)
+                    print(f"URL: {url}", flush=True)
+                    print(f"Headers: {json.dumps(headers, indent=2)}", flush=True)
+                    print(f"Body: {json.dumps(processed_body, indent=2)}", flush=True)
+                    print(f"--- End Request ---\n", flush=True)
+                
                 # Log response details if verbose
                 if verbose:
-                    print(f"\n--- Response Details ---")
-                    print(f"Template Used: {template.name} - {template.description}")
-                    print(f"Status: {response.status}")
-                    print(f"Response Time: {response_time:.0f}ms")
-                    print(f"Headers: {json.dumps(dict(response.headers), indent=2)}")
-                    print(f"Body: {response_body}")
-                    print(f"--- End Response ---\n")
+                    print(f"\n--- Response Details ---", flush=True)
+                    print(f"Template Used: {template.name} - {template.description}", flush=True)
+                    print(f"Status: {response.status}", flush=True)
+                    print(f"Response Time: {response_time:.0f}ms", flush=True)
+                    print(f"Headers: {json.dumps(dict(response.headers), indent=2)}", flush=True)
+                    print(f"Body: {response_body}", flush=True)
+                    print(f"--- End Response ---\n", flush=True)
                 
                 # Determine success
                 success = 200 <= response.status < 400
